@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Advanced Data Collector</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #00FF00;
+      font-family: 'Courier New', monospace;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #1e1e1e;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #00FF00;
+      text-shadow: 0 0 10px #00FF00;
+    }
+    p {
+      text-align: center;
+    }
+    button {
+      background-color: #00FF00;
+      color: #121212;
+      border: none;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #00cc00;
+    }
+    .data-section {
+      margin-top: 20px;
+    }
+    .data-section h3 {
+      margin: 10px 0;
+      border-bottom: 1px solid #00FF00;
+      padding-bottom: 5px;
+    }
+    pre {
+      background: #0e0e0e;
+      border: 1px solid #00FF00;
+      padding: 10px;
+      overflow-x: auto;
+      border-radius: 4px;
+      color: #00FF00;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Advanced Data Collector</h1>
+    <p>Collecting detailed browsing data for advanced categorization and targeted ads.</p>
+    <div style="text-align: center;">
+      <button id="viewData">View Data</button>
+      <button id="downloadData">Download Data</button>
+      <button id="clearData">Clear Data</button>
+    </div>
+    <div id="result" class="data-section"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
