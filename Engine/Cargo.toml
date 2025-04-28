@@ -4,6 +4,31 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+alloy ={version = "0.13.0"  , features = ["providers","json-abi","signers","transports","contract","network","dyn-abi"]}
+axum = {version="0.8.3",features = ["multipart","macros"]}
+base64 = "0.22.1"
+bytes = "1.10.1"
+derive_more = "2.0.1"
+dotenv = "0.15.0"
+eyre = "0.6.12"
 futures-util = "0.3.31"
+regex = "1.11.1"
+reqwest = {version ="0.12.15" ,features = ["json"]}
+rocksdb = "0.23.0"
+serde = {version ="1.0.219" ,features = ["derive"]}
+serde_json = "1.0.140"
+sha2 = "0.10.8"
 tokio = {version ="1.43.0" , features = ["full"]}
 tokio-tungstenite = "0.26.2"
+tower-http = {version = "0.6.2" , features = ["cors"]}
+url = "2.5.4"
+zip = "2.5.0"
+
+
+[[bin]]
+name = "engine"
+path = "src/test.rs"
+
+[[bin]]
+name =  "sample"
+path = "src/sample_metadata.rs"

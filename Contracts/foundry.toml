@@ -4,3 +4,13 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@gnosis/=lib/gnosis-safe-contracts/",
+    "@uniswap/=lib/uniswap-v2-core/",
+    "@aave/=lib/aave-protocol/",
+    "@balancer/=lib/balancer-core-v2/",
+    "@sushiswap/=lib/sushiswap-core/",
+    "@yearn/=lib/yearn-vaults/",
+]

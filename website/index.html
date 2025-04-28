@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ad Platform DApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0d0d0d;
+      color: #00ff88;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #111;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 20px #00ff8870;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h2 {
+      color: #00ff88;
+      margin-bottom: 24px;
+    }
+
+    button, input {
+      width: 100%;
+      padding: 12px 16px;
+      margin: 10px 0;
+      border-radius: 8px;
+      font-size: 16px;
+      background-color: #0f0f0f;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 0 8px #00ff8855;
+    }
+
+    button:hover, input:hover {
+      background-color: #1a1a1a;
+      transform: scale(1.02);
+      cursor: pointer;
+    }
+
+    input::placeholder {
+      color: #00ff8877;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #00ffaa;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin: 8px 0;
+      cursor: pointer;
+    }
+
+    input[type="radio"] {
+      margin-right: 6px;
+    }
+
+    @media screen and (max-width: 480px) {
+      .container {
+        padding: 20px;
+        margin: 10px;
+      }
+
+      button, input {
+        font-size: 14px;
+      }
+    }
+    .role-toggle {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.role-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.role-btn {
+  background: #f0f0f0;
+  border: 2px solid #ccc;
+  color: #333;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.role-btn.active {
+  background-color: #007bff;
+  color: #fff;
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.4);
+}
+
+.role-btn:hover {
+  background-color: #e0e0e0;
+}
+
+#adxInput {
+    width:auto;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>DEADX Dapp</h2>
+    <button id="connectBtn">Connect Wallet</button>
+    <p id="status">Not connected</p>
+
+    <div class="role-toggle">
+        <div class="role-buttons">
+          <button id="selectAdvendor" class="role-btn">AdVendor</button>
+          <button id="selectUser" class="role-btn">User</button>
+        </div>
+      </div>
+      
+
+    <div id="advendorActions" class="hidden">
+      <button id="registerVendor">Register as AdVendor</button>
+      <input id="adxInput" placeholder="ADX token amount">
+      <button id="buyCredits">Buy Credits (1 ETH)</button>
+    </div>
+
+    <div id="userActions" class="hidden">
+      <button id="claimRewards">Claim User Rewards</button>
+    </div>
+  </div>
+
+  <script>
+    const CONTRACT_ADDRESS = "0xa66a2c7E5d79F1A6FC894fcefC42Eb46B3A2eA86";
+    const CONTRACT_ABI = [
+      {
+        "type": "function",
+        "name": "register",
+        "inputs": [{ "name": "advendor", "type": "address", "internalType": "address" }],
+        "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "BuyCredits",
+        "inputs": [
+          { "name": "advendor", "type": "address", "internalType": "address" },
+          { "name": "amount", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
+        "name": "claimRewards",
+        "inputs": [{ "name": "user", "type": "address", "internalType": "address" }],
+        "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+        "stateMutability": "nonpayable"
+      }
+    ];
+    const ADX_TOKEN_ADDRESS = "0xC87ea587cb9e82FdC90A41E336d3807E144545E7"; // Replace with real ADX token address
+    const ADX_TOKEN_ABI = [
+      {
+        "type": "function",
+        "name": "approve",
+        "inputs": [
+          { "name": "spender", "type": "address", "internalType": "address" },
+          { "name": "amount", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+          { "name": "", "type": "bool", "internalType": "bool" }
+        ],
+        "stateMutability": "nonpayable"
+      }
+    ];
+
+    let signer;
+    let contract;
+
+    document.getElementById("connectBtn").onclick = async () => {
+      if (typeof window.ethereum === "undefined") {
+        alert("MetaMask is not installed.");
+        return;
+      }
+      
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      signer = await provider.getSigner();
+      contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      let userAddress = await signer.getAddress();
+      document.getElementById("status").innerText = `Connected: ${userAddress}`;
+    };
+
+    document.querySelectorAll("input[name='role']").forEach(input => {
+      input.addEventListener("change", (e) => {
+        const role = e.target.value;
+        document.getElementById("advendorActions").classList.toggle("hidden", role !== "advendor");
+        document.getElementById("userActions").classList.toggle("hidden", role !== "user");
+      });
+    });
+
+    document.getElementById("registerVendor").onclick = async () => {
+      try {
+        let userAddress = await signer.getAddress();
+        const tx = await contract.register(userAddress);
+        await tx.wait();
+        alert("AdVendor Registered!");
+      } catch (err) {
+        console.error(err);
+        alert("Error registering AdVendor.");
+      }
+    };
+
+    document.getElementById("buyCredits").onclick = async () => {
+      try {
+        const adxToken = new ethers.Contract(ADX_TOKEN_ADDRESS, ADX_TOKEN_ABI, signer);
+        const tx1 = await adxToken.approve(CONTRACT_ADDRESS, ethers.MaxUint256);
+        await tx1.wait();
+        let userAddress = await signer.getAddress();
+        const amount = document.getElementById("adxInput").value;
+        const tx = await contract.BuyCredits(userAddress, ethers.parseUnits(amount));
+        await tx.wait();
+        alert("Credits Purchased!");
+      } catch (err) {
+        console.error(err);
+        alert("Error buying credits.");
+      }
+    };
+
+    document.getElementById("claimRewards").onclick = async () => {
+      try {
+        let userAddress = await signer.getAddress();
+        const tx = await contract.claimRewards(userAddress);
+        await tx.wait();
+        alert("Rewards Claimed!");
+      } catch (err) {
+        console.error(err);
+        alert("Error claiming rewards.");
+      }
+    };
+    document.getElementById("selectAdvendor").addEventListener("click", () => {
+    setRole("advendor");
+    });
+
+    document.getElementById("selectUser").addEventListener("click", () => {
+    setRole("user");
+    });
+
+    function setRole(role) {
+    // Toggle buttons visually
+    document.getElementById("selectAdvendor").classList.toggle("active", role === "advendor");
+    document.getElementById("selectUser").classList.toggle("active", role === "user");
+
+    // Show/hide role-specific actions
+    document.getElementById("advendorActions").classList.toggle("hidden", role !== "advendor");
+    document.getElementById("userActions").classList.toggle("hidden", role !== "user");
+    }
+  </script>
+</body>
+</html>
+

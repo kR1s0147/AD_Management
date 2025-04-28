@@ -1,40 +1,82 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import "./ERC20.sol";
+
 contract AdRegistry {
-    struct Ad {
-        uint256 adId;
-        address advertiser;
-        string adData; // IPFS hash or URL for ad content
-        uint256 budget;
-        uint256 rewardPerView;
-        uint256 totalViews;
+    struct AdVendor {
         bool isActive;
+        uint256 Credits;
     }
 
-    mapping(uint256 => Ad) public ads;
-    uint256 public adCounter;
+    uint256 public creditFactor;
 
-    event AdCreated(uint256 indexed adId, address indexed advertiser);
-    event AdUpdated(uint256 indexed adId, bool isActive);
+    address public owner;
 
-    modifier onlyAdvertiser(uint256 adId) {
-        require(ads[adId].advertiser == msg.sender, "Not the ad owner.");
+    ADX public adx;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not the contract owner.");
+        _;
+    }
+    modifier onlyAdVendor() {
+        require(AdVendors[msg.sender].isActive, "Not an AdVendor.");
         _;
     }
 
-    function createAd(string memory adData, uint256 budget, uint256 rewardPerView) external {
-        adCounter++;
-        ads[adCounter] = Ad(adCounter, msg.sender, adData, budget, rewardPerView, 0, true);
-        emit AdCreated(adCounter, msg.sender);
+    constructor(address adxAddress, uint256 initialCreditFactor) {
+        require(adxAddress != address(0), "Invalid ADX address.");
+        require(initialCreditFactor > 0, "Invalid credit factor.");
+        creditFactor = initialCreditFactor;
+        adx = ADX(adxAddress);
+        owner = msg.sender;
     }
 
-    function updateAdStatus(uint256 adId, bool isActive) external onlyAdvertiser(adId) {
-        ads[adId].isActive = isActive;
-        emit AdUpdated(adId, isActive);
+    mapping(address => AdVendor) public AdVendors;
+
+    event AdVendorRegistered(address indexed);
+    event CreditsPurchased(address indexed advendor, uint256 amount);
+
+    function register(address advendor) external returns (bool) {
+        require(!AdVendors[advendor].isActive, "Already registered.");
+        AdVendors[advendor] = AdVendor(true, 0);
+        emit AdVendorRegistered(advendor);
+        return true;
     }
 
-    function getAd(uint256 adId) external view returns (Ad memory) {
-        return ads[adId];
+    function BuyCredits(address advendor, uint256 amount) onlyAdVendor external returns (bool) {
+        require(AdVendors[advendor].isActive, "Not registered.");
+        require(amount > 0, "Invalid amount.");
+        require(adx.balanceOf(msg.sender) >= amount, "Insufficient ADX balance.");
+        require(adx.allowance(msg.sender, address(this)) >= amount, "Insufficient allowance.");
+        require(adx.transferFrom(msg.sender, address(this), amount), "Transfer failed.");
+        AdVendors[advendor].Credits += amount * creditFactor;
+        emit CreditsPurchased(advendor, amount);
+        return true;
+    }
+
+    function previewCredits(uint256 amount) external view returns (uint256) {
+        return amount * creditFactor;
+    }
+
+    function getCreditFactor() external view returns (uint256) {
+        return creditFactor;
+    }
+
+    function getCredits(address advendor) external view returns (uint256) {
+        return AdVendors[advendor].Credits;
+    }
+
+    function setCreditFactor(uint256 factor) onlyOwner external returns (bool) {
+        creditFactor = factor;
+        return true;
+    }
+
+    function getAdVendorDetails(address advendor) external view returns (AdVendor memory) {
+        return AdVendors[advendor];
+    }
+
+    function getAdVendorStatus(address advendor) external view returns (bool) {
+        return AdVendors[advendor].isActive;
     }
 }

@@ -2,35 +2,40 @@
 pragma solidity ^0.8.19;
 
 contract UserProfile {
-    struct User {
-        address userAddress;
-        uint256[] viewedAds;
-        uint256 totalEarned;
-        bool registered;
+
+    mapping(address => uint256) public userRewardPoints;
+
+    address public admin;
+
+    constructor(address _admin) {
+        admin = _admin;
     }
 
-    mapping(address => User) public users;
-
-    event UserRegistered(address indexed user);
-    event AdViewed(address indexed user, uint256 adId);
-
-    modifier onlyRegistered() {
-        require(users[msg.sender].registered, "User not registered.");
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not the contract admin.");
         _;
     }
+    event UserRewardPointsUpdated(address indexed user, uint256 points);
 
-    function registerUser() external {
-        require(!users[msg.sender].registered, "Already registered.");
-        users , 0, true);
-        emit UserRegistered(msg.sender);
+    function UpdateUserRewards(address[] memory users , uint256[] memory rewardPoints) onlyAdmin external returns(bool) {
+        require(users.length == rewardPoints.length, "Users and reward points length mismatch.");
+        for (uint256 i = 0; i < users.length; i++) {
+            userRewardPoints[users[i]] += rewardPoints[i];
+            emit UserRewardPointsUpdated(users[i], userRewardPoints[users[i]]);
+        }
+        return true;
     }
 
-    function recordAdView(uint256 adId) external onlyRegistered {
-        users[msg.sender].viewedAds.push(adId);
-        emit AdViewed(msg.sender, adId);
+    function getUserRewardPoints(address user) external view returns (uint256) {
+        return userRewardPoints[user];
     }
 
-    function getViewedAds(address user) external view returns (uint256[] memory) {
-        return users[user].viewedAds;
+    function getAdmin() external view returns (address) {
+        return admin;
+    }
+
+    function setAdmin(address newAdmin) external onlyAdmin {
+        require(newAdmin != address(0), "Invalid address.");
+        admin = newAdmin;
     }
 }
